@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Duty OT">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#16a34a">
+<title>Duty &amp; OT Entry</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --green:#16a34a;--green-lt:#22c55e;--green-pal:#dcfce7;--green-dk:#14532d;
+  --orange:#ea580c;--orange-pal:#ffedd5;
+  --amber:#d97706;--amber-pal:#fef3c7;
+  --red:#dc2626;--red-pal:#fef2f2;
+  --blue:#2563eb;--blue-pal:#eff6ff;
+  --bg:#f1f5f9;--card:#ffffff;--brd:#e2e8f0;--brd2:#cbd5e1;
+  --text:#0f172a;--text2:#334155;--muted:#64748b;
+  --radius:12px;--radius-sm:8px;
+  --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg:0 10px 30px rgba(0,0,0,.12);
+}
+html{height:100%;}
+body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;display:flex;flex-direction:column;overflow:hidden;position:fixed;width:100%;}
+
+/* ── AUTH SCREENS ── */
+.auth-wrap{position:fixed;inset:0;background:linear-gradient(135deg,#14532d 0%,#16a34a 60%,#22c55e 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;z-index:300;}
+.auth-wrap.hide{display:none;}
+.auth-logo{width:70px;height:70px;background:rgba(255,255,255,.2);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:1rem;box-shadow:0 4px 20px rgba(0,0,0,.2);}
+.auth-title{font-size:1.5rem;font-weight:800;color:#fff;margin-bottom:.25rem;}
+.auth-sub{font-size:.82rem;color:rgba(255,255,255,.8);margin-bottom:1.75rem;text-align:center;}
+.auth-card{background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.auth-tab{display:flex;background:#f1f5f9;border-radius:10px;padding:3px;margin-bottom:1.25rem;}
+.auth-tab-btn{flex:1;padding:.5rem;border:none;background:transparent;border-radius:8px;font-size:.85rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all .18s;font-family:inherit;}
+.auth-tab-btn.on{background:#fff;color:var(--green);box-shadow:var(--shadow);}
+.auth-form{display:none;}.auth-form.on{display:block;}
+.auth-hint{font-size:.72rem;color:var(--muted);text-align:center;margin-top:.9rem;line-height:1.6;}
+.auth-hint a{color:var(--green);font-weight:600;cursor:pointer;text-decoration:none;}
+.forgot-link{font-size:.72rem;color:var(--green);font-weight:600;cursor:pointer;text-align:right;margin-top:-.4rem;margin-bottom:.6rem;display:block;}
+
+/* ── HEADER ── */
+.header{background:var(--green);color:#fff;padding:.85rem 1rem;padding-top:calc(.85rem + env(safe-area-inset-top));display:flex;align-items:center;gap:.75rem;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.2);position:relative;z-index:10;}
+.hicon{width:34px;height:34px;background:rgba(255,255,255,.2);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+.htitle{font-size:1rem;font-weight:700;line-height:1.2;}
+.hsub{font-size:.7rem;opacity:.8;}
+.hright{margin-left:auto;display:flex;gap:.4rem;align-items:center;}
+.hbtn{background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:8px;padding:.4rem .7rem;font-size:.75rem;font-weight:700;cursor:pointer;}
+.hbtn:active{background:rgba(255,255,255,.35);}
+.user-chip{background:rgba(255,255,255,.15);color:#fff;border-radius:100px;padding:.25rem .65rem;font-size:.7rem;font-weight:600;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ── BOTTOM NAV ── */
+.bnav{display:flex;background:#fff;border-top:1px solid var(--brd);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom);position:relative;z-index:10;}
+.nbtn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.55rem .25rem;gap:.2rem;background:none;border:none;cursor:pointer;color:var(--muted);font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;transition:color .15s;}
+.nbtn.act{color:var(--green);}
+.nbtn .ni{font-size:1.25rem;line-height:1;}
+
+/* ── SCREENS ── */
+.screen{display:none;flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:1rem;padding-bottom:1.5rem;}
+.screen.act{display:block;}
+.screen::-webkit-scrollbar{display:none;}
+
+/* ── CARDS ── */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:.9rem;overflow:hidden;}
+.chead{background:#e8f5e9;padding:.65rem 1rem;display:flex;align-items:center;gap:.5rem;border-bottom:1px solid #c8e6c9;}
+.chead-ic{font-size:.95rem;}
+.chead-tx{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--green-dk);}
+.cbody{padding:.85rem 1rem;}
+
+/* ── FORM ── */
+.fg{margin-bottom:.85rem;}
+.fg:last-child{margin-bottom:0;}
+.fg label{display:block;font-size:.7rem;font-weight:700;color:var(--text2);margin-bottom:.32rem;text-transform:uppercase;letter-spacing:.04em;}
+.req{color:var(--red);margin-left:1px;}
+.fg input,.fg select,.fg textarea{width:100%;background:#fff;border:1.5px solid var(--brd2);border-radius:var(--radius-sm);color:var(--text);font-size:.92rem;padding:.65rem .8rem;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;appearance:none;font-family:inherit;}
+.fg select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6,9 12,15 18,9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .7rem center;padding-right:2.4rem;cursor:pointer;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(22,163,74,.15);}
+.fg input[readonly]{background:#f8fafc;color:var(--muted);}
+.fg textarea{resize:none;min-height:70px;line-height:1.5;}
+.rel{position:relative;}
+.rel input{padding-right:2.8rem;}
+.eye-btn{position:absolute;right:.75rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;padding:.2rem;}
+
+/* ── DT ROW ── */
+.dt-row{display:flex;gap:.5rem;align-items:center;}
+.dt-row input{flex:1;}
+.dt-now{background:#dcfce7;color:var(--green-dk);border:none;border-radius:6px;padding:.52rem .7rem;font-size:.75rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.dt-now:active{background:#bbf7d0;}
+
+/* ── GRID ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;}
+
+/* ── TOGGLE ROW ── */
+.trow{display:flex;align-items:center;justify-content:space-between;padding:.8rem 0;border-bottom:1px solid var(--brd);cursor:pointer;user-select:none;-webkit-user-select:none;}
+.trow:last-child{border-bottom:none;}
+.trow-lbl{font-size:.88rem;font-weight:600;color:var(--text);pointer-events:none;}
+.trow-desc{font-size:.7rem;color:var(--muted);margin-top:.1rem;pointer-events:none;}
+.tgl{width:44px;height:25px;background:var(--brd2);border-radius:100px;position:relative;flex-shrink:0;transition:background .2s;pointer-events:none;}
+.tgl::after{content:'';position:absolute;top:2.5px;left:2.5px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.25);}
+.tgl.on{background:var(--green);}
+.tgl.on::after{left:21.5px;}
+
+/* ── EXPAND ── */
+.expd{display:none;padding-top:.5rem;}
+.expd.on{display:block;}
+
+/* ── SEGMENT ── */
+.seg{display:flex;background:#f1f5f9;border-radius:var(--radius-sm);padding:3px;gap:2px;margin-bottom:.85rem;}
+.sbtn{flex:1;padding:.48rem;border:none;background:transparent;border-radius:6px;font-size:.8rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .18s;font-family:inherit;}
+.sbtn.on{background:#fff;color:var(--green);box-shadow:var(--shadow);}
+.sbtn:active{opacity:.8;}
+
+/* ── BUTTONS ── */
+.btn{display:flex;align-items:center;justify-content:center;gap:.45rem;width:100%;padding:.82rem;border-radius:var(--radius);border:none;font-size:.92rem;font-weight:700;cursor:pointer;transition:opacity .15s,transform .1s;font-family:inherit;}
+.btn:active{opacity:.85;transform:scale(.98);}
+.btn-g{background:var(--green);color:#fff;}
+.btn-o{background:#fff;color:var(--green);border:2px solid var(--green);}
+.btn-o:active{background:var(--green-pal);}
+.btn-r{background:var(--red);color:#fff;}
+.btn-gy{background:#f1f5f9;color:var(--text2);border:1.5px solid var(--brd2);}
+.btn-sm{padding:.55rem .85rem;font-size:.8rem;border-radius:var(--radius-sm);width:auto;}
+.btn-row{display:flex;gap:.6rem;margin-top:.7rem;}
+
+/* ── BADGES ── */
+.bdg{display:inline-flex;align-items:center;gap:.25rem;padding:.22rem .6rem;border-radius:100px;font-size:.68rem;font-weight:700;}
+.bdg-g{background:var(--green-pal);color:var(--green-dk);}
+.bdg-o{background:var(--orange-pal);color:var(--orange);}
+.bdg-a{background:var(--amber-pal);color:var(--amber);}
+.bdg-b{background:var(--blue-pal);color:var(--blue);}
+
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.55rem;margin-bottom:.9rem;}
+.stat{background:#fff;border-radius:var(--radius);padding:.7rem .5rem;text-align:center;box-shadow:var(--shadow);}
+.stat-v{font-size:1.5rem;font-weight:800;color:var(--green);}
+.stat-l{font-size:.62rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:.1rem;}
+
+/* ── RECORD ITEM ── */
+.ri{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:.6rem;overflow:hidden;}
+.ri-hd{display:flex;align-items:center;gap:.55rem;padding:.65rem .85rem;background:#f8fafc;border-bottom:1px solid var(--brd);}
+.ri-hd.ph{background:#fff7ed;border-bottom-color:#fed7aa;}
+.ri-hd.od{background:#eff6ff;border-bottom-color:#bfdbfe;}
+.ri-num{width:25px;height:25px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;flex-shrink:0;}
+.ri-user{font-size:.83rem;font-weight:700;flex:1;}
+.ri-time{font-size:.66rem;color:var(--muted);}
+.ri-del{background:none;border:none;color:var(--muted);cursor:pointer;padding:.2rem .35rem;font-size:1rem;flex-shrink:0;}
+.ri-del:active{color:var(--red);}
+.ri-body{padding:.65rem .85rem;}
+.ri-row{display:flex;align-items:flex-start;gap:.35rem;margin-bottom:.28rem;font-size:.76rem;color:var(--text2);}
+.ri-row:last-child{margin-bottom:0;}
+.ri-lbl{font-size:.66rem;font-weight:600;color:var(--muted);min-width:76px;flex-shrink:0;padding-top:.05rem;}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:3rem 1rem;color:var(--muted);}
+.empty .ei{font-size:3rem;margin-bottom:.75rem;opacity:.45;}
+.empty p{font-size:.85rem;line-height:1.6;}
+
+/* ── SHEET ── */
+.sbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;opacity:0;pointer-events:none;transition:opacity .25s;}
+.sbg.on{opacity:1;pointer-events:all;}
+.sht{position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;z-index:51;padding:1.1rem 1rem;padding-bottom:calc(1.1rem + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .3s cubic-bezier(.33,1,.68,1);max-height:88vh;overflow-y:auto;}
+.sht.on{transform:translateY(0);}
+.sht-handle{width:38px;height:4px;background:#e2e8f0;border-radius:100px;margin:0 auto .85rem;}
+.sht-title{font-size:.95rem;font-weight:700;margin-bottom:.9rem;color:var(--text);}
+
+/* ── TOAST ── */
+.twrap{position:fixed;top:0;left:0;right:0;z-index:400;pointer-events:none;padding:.75rem .9rem;padding-top:calc(.75rem + env(safe-area-inset-top));}
+.tst{background:#1e293b;color:#f8fafc;border-radius:10px;padding:.7rem .95rem;font-size:.83rem;font-weight:500;display:flex;align-items:center;gap:.45rem;box-shadow:0 8px 24px rgba(0,0,0,.25);transform:translateY(-90px);opacity:0;transition:all .32s cubic-bezier(.34,1.56,.64,1);}
+.tst.on{transform:translateY(0);opacity:1;}
+.tst.ok{border-left:4px solid #22c55e;}
+.tst.err{border-left:4px solid #ef4444;}
+.tst.warn{border-left:4px solid #f59e0b;}
+
+/* ── MISC ── */
+.sdiv{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:.85rem 0 .45rem;}
+.install-hint{background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:.75rem .9rem;font-size:.75rem;color:#166534;line-height:1.65;margin-top:.75rem;}
+.install-hint b{color:#14532d;}
+.profile-row{display:flex;align-items:center;gap:.75rem;padding:.75rem;background:#f0fdf4;border-radius:10px;margin-bottom:.9rem;border:1px solid #86efac;}
+.profile-avatar{width:44px;height:44px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;font-weight:800;flex-shrink:0;}
+.profile-name{font-size:.9rem;font-weight:700;color:var(--green-dk);}
+.profile-email{font-size:.72rem;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     AUTH SCREEN
+════════════════════════════════════════ -->
+<div class="auth-wrap" id="authWrap">
+  <div class="auth-logo">&#9201;</div>
+  <div class="auth-title">Duty &amp; OT Entry</div>
+  <div class="auth-sub">Sign in to continue</div>
+
+  <div class="auth-card">
+    <!-- Tab switcher -->
+    <div class="auth-tab">
+      <button class="auth-tab-btn on" id="tabLogin">Sign In</button>
+      <button class="auth-tab-btn" id="tabRegister">Register</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div class="auth-form on" id="formLogin">
+      <div class="fg">
+        <label>Email Address</label>
+        <input type="email" id="loginEmail" placeholder="your@email.com" inputmode="email" autocomplete="email">
+      </div>
+      <div class="fg">
+        <label>Password</label>
+        <div class="rel">
+          <input type="password" id="loginPwd" placeholder="Your password" autocomplete="current-password">
+          <button class="eye-btn" id="eyeLogin">&#128065;</button>
+        </div>
+      </div>
+      <span class="forgot-link" id="forgotLink">Forgot password?</span>
+      <button class="btn btn-g" id="loginBtn">Sign In</button>
+      <div class="auth-hint">Don't have an account? <a id="goRegister">Register here</a></div>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div class="auth-form" id="formRegister">
+      <div class="fg">
+        <label>Full Name <span class="req">*</span></label>
+        <input type="text" id="regName" placeholder="Your full name" autocomplete="name">
+      </div>
+      <div class="fg">
+        <label>Email Address <span class="req">*</span></label>
+        <input type="email" id="regEmail" placeholder="your@email.com" inputmode="email" autocomplete="email">
+      </div>
+      <div class="fg">
+        <label>Password <span class="req">*</span></label>
+        <div class="rel">
+          <input type="password" id="regPwd" placeholder="Min 6 characters" autocomplete="new-password">
+          <button class="eye-btn" id="eyeReg">&#128065;</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Confirm Password <span class="req">*</span></label>
+        <input type="password" id="regPwd2" placeholder="Repeat password" autocomplete="new-password">
+      </div>
+      <button class="btn btn-g" id="registerBtn">Create Account</button>
+      <div class="auth-hint">Already registered? <a id="goLogin">Sign in here</a></div>
+    </div>
+
+    <!-- FORGOT PASSWORD FORM -->
+    <div class="auth-form" id="formForgot">
+      <p style="font-size:.82rem;color:var(--muted);line-height:1.6;margin-bottom:.9rem;">Enter your registered email. Your password will be shown (stored locally on this device).</p>
+      <div class="fg">
+        <label>Registered Email</label>
+        <input type="email" id="forgotEmail" placeholder="your@email.com" inputmode="email">
+      </div>
+      <button class="btn btn-g" id="forgotBtn">Reset Password</button>
+      <div class="auth-hint"><a id="backToLogin">&#8592; Back to Sign In</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MAIN APP (shown after login)
+════════════════════════════════════════ -->
+<div id="appWrap" style="display:none;flex-direction:column;height:100%;">
+
+<div class="header">
+  <div class="hicon">&#9201;</div>
+  <div>
+    <div class="htitle">Duty &amp; OT Entry</div>
+    <div class="hsub" id="hsub">Add new record</div>
+  </div>
+  <div class="hright">
+    <div class="user-chip" id="userChip"></div>
+    <button class="hbtn" id="exportHBtn">&#11015;</button>
+    <button class="hbtn" id="logoutBtn">&#128274;</button>
+  </div>
+</div>
+
+<!-- SCREEN: ENTRY -->
+<div class="screen act" id="sc-entry">
+  <div class="card">
+    <div class="chead"><span class="chead-ic">&#128197;</span><span class="chead-tx">Entry Information</span></div>
+    <div class="cbody">
+      <div class="fg">
+        <label>Entry Date &amp; Time <span class="req">*</span></label>
+        <div class="dt-row">
+          <input type="datetime-local" id="entryDT">
+          <button class="dt-now" id="nowBtn">Now</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Employee Code <span class="req">*</span></label>
+        <input type="text" id="empCode" placeholder="e.g. E11192" autocomplete="off">
+      </div>
+      <div class="g2">
+        <div class="fg">
+          <label>User ID / NT Login <span class="req">*</span></label>
+          <input type="text" id="userId" placeholder="NT login" autocomplete="off">
+        </div>
+        <div class="fg">
+          <label>Full Name <span class="req">*</span></label>
+          <input type="text" id="fullName" placeholder="Your name" autocomplete="off">
+        </div>
+      </div>
+      <div class="fg" style="margin:0">
+        <label>Work Location <span class="req">*</span></label>
+        <select id="locSel"><option value="">-- Select --</option></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chead"><span class="chead-ic">&#128336;</span><span class="chead-tx">Shift Details</span></div>
+    <div class="cbody">
+      <div class="fg">
+        <label>Shift Start <span class="req">*</span></label>
+        <input type="datetime-local" id="shiftStart">
+      </div>
+      <div class="fg">
+        <label>Shift End</label>
+        <input type="datetime-local" id="shiftEnd">
+      </div>
+      <div class="fg" style="margin:0">
+        <label>Shift Duration</label>
+        <input type="text" id="shiftDur" readonly placeholder="Auto-calculated">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chead"><span class="chead-ic">&#9200;</span><span class="chead-tx">Work Type</span></div>
+    <div class="cbody">
+      <div class="trow" id="trowOT">
+        <div>
+          <div class="trow-lbl">Overtime (OT)</div>
+          <div class="trow-desc">Worked beyond regular shift hours</div>
+        </div>
+        <div class="tgl" id="tglOT"></div>
+      </div>
+      <div class="expd" id="exOT">
+        <div class="sdiv">OT Type</div>
+        <div class="seg">
+          <button class="sbtn on" id="segNorm">Normal OT</button>
+          <button class="sbtn" id="segPH">Public Holiday OT</button>
+        </div>
+        <div class="fg">
+          <label>OT Start <span class="req">*</span></label>
+          <input type="datetime-local" id="otStart">
+        </div>
+        <div class="fg">
+          <label>OT End <span class="req">*</span></label>
+          <input type="datetime-local" id="otEnd">
+        </div>
+        <div class="fg" style="margin:0">
+          <label>OT Hours</label>
+          <input type="text" id="otHours" readonly placeholder="Auto-calculated">
+        </div>
+      </div>
+      <div class="trow" id="trowOff" style="padding-top:.8rem">
+        <div>
+          <div class="trow-lbl">Worked on Off Day</div>
+          <div class="trow-desc">Worked on a weekend or rest day</div>
+        </div>
+        <div class="tgl" id="tglOff"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chead"><span class="chead-ic">&#128203;</span><span class="chead-tx">Additional Details</span></div>
+    <div class="cbody">
+      <div class="fg">
+        <label>No. of Interactions</label>
+        <input type="number" id="interactions" placeholder="e.g. 12" min="0" inputmode="numeric">
+      </div>
+      <div class="fg" style="margin:0">
+        <label>Remarks / Notes</label>
+        <textarea id="remarks" placeholder="Task, project, reason for OT..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-g" id="saveBtn">&#10003;&nbsp; Save Record</button>
+  <div style="height:.5rem"></div>
+  <button class="btn btn-gy" id="clearBtn">&#10005;&nbsp; Clear Form</button>
+  <div style="height:1rem"></div>
+</div>
+
+<!-- SCREEN: RECORDS -->
+<div class="screen" id="sc-records">
+  <div class="stats">
+    <div class="stat"><div class="stat-v" id="stTotal">0</div><div class="stat-l">Total</div></div>
+    <div class="stat"><div class="stat-v" id="stOT" style="color:var(--amber)">0</div><div class="stat-l">OT Records</div></div>
+    <div class="stat"><div class="stat-v" id="stHrs" style="color:var(--blue)">0</div><div class="stat-l">OT Hours</div></div>
+  </div>
+  <div id="recList"><div class="empty"><div class="ei">&#128269;</div><p>No records yet.</p></div></div>
+</div>
+
+<!-- SCREEN: SETTINGS -->
+<div class="screen" id="sc-settings">
+  <div class="profile-row" id="profileRow">
+    <div class="profile-avatar" id="profileInitial">?</div>
+    <div>
+      <div class="profile-name" id="profileName">—</div>
+      <div class="profile-email" id="profileEmail">—</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chead"><span class="chead-ic">&#11015;</span><span class="chead-tx">Export &amp; Share</span></div>
+    <div class="cbody">
+      <button class="btn btn-g" id="shareBtn2">&#128257;&nbsp; Share via WhatsApp / Email / Teams</button>
+      <div style="height:.45rem"></div>
+      <button class="btn btn-o" id="exportBtn2">&#9993;&nbsp; Open Email App Only</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chead"><span class="chead-ic">&#127968;</span><span class="chead-tx">Locations</span></div>
+    <div class="cbody">
+      <div class="fg">
+        <label>Add Custom Location</label>
+        <div style="display:flex;gap:.5rem">
+          <input type="text" id="newLoc" placeholder="e.g. Warehouse B" style="flex:1">
+          <button class="btn btn-g btn-sm" id="addLocBtn">Add</button>
+        </div>
+      </div>
+      <div id="locChips" style="display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.4rem"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chead"><span class="chead-ic">&#128274;</span><span class="chead-tx">Account</span></div>
+    <div class="cbody">
+      <button class="btn btn-gy" id="logoutBtn2" style="margin-bottom:.5rem">&#128274;&nbsp; Sign Out</button>
+      <button class="btn btn-r" id="clearAllBtn">&#128465;&nbsp; Clear All My Records</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chead"><span class="chead-ic">&#128336;</span><span class="chead-tx">Login / Logout History</span></div>
+    <div class="cbody">
+      <div id="loginHist" style="font-size:.78rem;color:var(--text2);line-height:1.8;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chead"><span class="chead-ic">&#8505;</span><span class="chead-tx">Install as App</span></div>
+    <div class="cbody">
+      <div class="install-hint">
+        <b>Android Chrome:</b> Tap &#8942; menu &rarr; &ldquo;Add to Home Screen&rdquo;<br>
+        <b>iPhone Safari:</b> Tap &#9633; Share &rarr; &ldquo;Add to Home Screen&rdquo;<br><br>
+        Opens full-screen like a native app.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <button class="nbtn act" id="nb-entry"><span class="ni">&#128221;</span>Entry</button>
+  <button class="nbtn" id="nb-records"><span class="ni">&#128203;</span>Records</button>
+  <button class="nbtn" id="nb-settings"><span class="ni">&#9881;</span>Settings</button>
+</div>
+
+</div><!-- /appWrap -->
+
+<!-- EXPORT SHEET -->
+<div class="sbg" id="expBg"></div>
+<div class="sht" id="expSht">
+  <div class="sht-handle"></div>
+  <div class="sht-title">&#11015; Export &amp; Share Records</div>
+  <div class="fg">
+    <label>Recipient Email (To) <span style="font-size:.68rem;color:var(--muted);font-weight:400;text-transform:none">(for email option)</span></label>
+    <input type="email" id="toEml" placeholder="manager@email.com" inputmode="email">
+  </div>
+  <div class="fg">
+    <label>Subject</label>
+    <input type="text" id="emlSubj" value="Duty &amp; OT Records">
+  </div>
+  <div class="fg">
+    <label>Date Range</label>
+    <div class="seg" id="rangeSeg">
+      <button class="sbtn on" id="rAll">All</button>
+      <button class="sbtn" id="rMonth">This Month</button>
+      <button class="sbtn" id="rWeek">This Week</button>
+    </div>
+  </div>
+  <p style="font-size:.73rem;color:var(--muted);line-height:1.6;margin-bottom:.9rem;background:#f8fafc;padding:.6rem .75rem;border-radius:8px;">
+    <b style="color:var(--text)">Share</b> opens your phone's share menu &mdash; send via WhatsApp, Teams, Gmail etc.<br>
+    <b style="color:var(--text)">Email</b> opens email app &mdash; attach the downloaded file and send.
+  </p>
+  <button class="btn btn-g" id="shareBtn">&#128257;&nbsp; Share (WhatsApp / Teams / Email...)</button>
+  <div style="height:.45rem"></div>
+  <button class="btn btn-o" id="doExpBtn">&#9993;&nbsp; Open Email App</button>
+  <div style="height:.45rem"></div>
+  <button class="btn btn-gy" id="expCancelBtn">Cancel</button>
+  <div style="height:.5rem"></div>
+</div>
+
+<!-- TOAST -->
+<div class="twrap"><div class="tst" id="tst"></div></div>
+
+<script>
+// ═══════════════════════════════════════════
+//  STORAGE KEYS
+// ═══════════════════════════════════════════
+var RK  = 'dot_recs_v2';
+var LK  = 'dot_locs_v2';
+var UK  = 'dot_users_v1';
+var SK  = 'dot_session_v1';
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+var records   = [];
+var locations = ['Al Quoz','Umm Ramool','Muhaisnah','WFH'];
+var otOn      = false;
+var offOn     = false;
+var otType    = 'Normal';
+var expRange  = 'all';
+var currentUser = null; // {name, empCode, userId, email, pwd}
+
+// ═══════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════
+function pad(x){ return String(x).padStart(2,'0'); }
+
+function localNow(){
+  var n=new Date(); n.setSeconds(0,0); n.setMilliseconds(0);
+  return n.getFullYear()+'-'+pad(n.getMonth()+1)+'-'+pad(n.getDate())+'T'+pad(n.getHours())+':'+pad(n.getMinutes());
+}
+
+function fmtDT(v){
+  if(!v) return '--';
+  try{
+    var d=new Date(v);
+    if(isNaN(d)) return v;
+    return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+  } catch(e){ return v; }
+}
+
+function diffHrs(a,b){
+  if(!a||!b) return '';
+  var d=(new Date(b)-new Date(a))/3600000;
+  return d>0?d.toFixed(2):'';
+}
+
+function esc(s){
+  if(!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function toast(msg,type){
+  var t=document.getElementById('tst');
+  t.textContent=msg;
+  t.className='tst on '+(type||'ok');
+  clearTimeout(t._t);
+  t._t=setTimeout(function(){ t.classList.remove('on'); },3500);
+}
+
+// ═══════════════════════════════════════════
+//  USER STORAGE (localStorage, device-only)
+// ═══════════════════════════════════════════
+function getUsers(){
+  try{ return JSON.parse(localStorage.getItem(UK)||'[]'); } catch(e){ return []; }
+}
+function saveUsers(users){
+  localStorage.setItem(UK, JSON.stringify(users));
+}
+function getSession(){
+  try{ return JSON.parse(localStorage.getItem(SK)||'null'); } catch(e){ return null; }
+}
+function saveSession(user){
+  localStorage.setItem(SK, JSON.stringify(user));
+}
+function clearSession(){
+  localStorage.removeItem(SK);
+}
+
+// ═══════════════════════════════════════════
+//  AUTH LOGIC
+// ═══════════════════════════════════════════
+function doRegister(){
+  var name  = document.getElementById('regName').value.trim();
+  var email = document.getElementById('regEmail').value.trim().toLowerCase();
+  var pwd   = document.getElementById('regPwd').value;
+  var pwd2  = document.getElementById('regPwd2').value;
+
+  if(!name)  { toast('Full name required','err'); return; }
+  if(!email) { toast('Email required','err'); return; }
+  if(!email.includes('@')){ toast('Enter a valid email','err'); return; }
+  if(pwd.length < 6){ toast('Password must be at least 6 characters','err'); return; }
+  if(pwd !== pwd2)  { toast('Passwords do not match','err'); return; }
+
+  var users = getUsers();
+  if(users.find(function(u){ return u.email===email; })){
+    toast('Email already registered','err'); return;
+  }
+
+  var newUser = {name:name, email:email, pwd:pwd};
+  users.push(newUser);
+  saveUsers(users);
+  var newUserWithSession = Object.assign({}, newUser, {loginDT: new Date().toISOString()});
+  saveSession(newUserWithSession);
+  currentUser = newUserWithSession;
+  toast('Account created! Welcome, '+name,'ok');
+  launchApp();
+}
+
+function doLogin(){
+  var email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  var pwd   = document.getElementById('loginPwd').value;
+  if(!email){ toast('Enter your email','err'); return; }
+  if(!pwd)  { toast('Enter your password','err'); return; }
+
+  var users = getUsers();
+  var user  = users.find(function(u){ return u.email===email && u.pwd===pwd; });
+  if(!user){
+    toast('Incorrect email or password','err'); return;
+  }
+  var userWithSession = Object.assign({}, user, {loginDT: new Date().toISOString()});
+  saveSession(userWithSession);
+  currentUser = userWithSession;
+  toast('Welcome back, '+user.name,'ok');
+  launchApp();
+}
+
+function doForgot(){
+  var email = document.getElementById('forgotEmail').value.trim().toLowerCase();
+  if(!email){ toast('Enter your email','err'); return; }
+  var users = getUsers();
+  var user  = users.find(function(u){ return u.email===email; });
+  if(!user){ toast('No account found with that email','err'); return; }
+  // Show password (local device - no server, so this is acceptable)
+  alert('Your password is:\n\n' + user.pwd + '\n\nPlease sign in and consider updating it.');
+  showLoginTab();
+}
+
+function doLogout(){
+  if(!confirm('Sign out?')) return;
+  // Save logout time in history
+  if(currentUser){
+    var hist = [];
+    try{ hist = JSON.parse(localStorage.getItem('dot_login_hist')||'[]'); }catch(e){}
+    hist.unshift({
+      name:     currentUser.name,
+      email:    currentUser.email,
+      loginDT:  currentUser.loginDT || '',
+      logoutDT: new Date().toISOString()
+    });
+    if(hist.length > 100) hist = hist.slice(0,100); // keep last 100
+    localStorage.setItem('dot_login_hist', JSON.stringify(hist));
+  }
+  clearSession();
+  currentUser = null;
+  records = [];
+  showAuthScreen();
+  toast('Signed out','warn');
+}
+
+function launchApp(){
+  document.getElementById('authWrap').classList.add('hide');
+  var aw = document.getElementById('appWrap');
+  aw.style.display='flex';
+  loadUserData();
+  renderLocs();
+  renderRecords();
+  updateStats();
+  updateProfileUI();
+  prefillForm();
+  document.getElementById('entryDT').value = localNow();
+  renderLoginHist();
+}
+
+function showAuthScreen(){
+  document.getElementById('authWrap').classList.remove('hide');
+  document.getElementById('appWrap').style.display='none';
+  showLoginTab();
+}
+
+function updateProfileUI(){
+  if(!currentUser) return;
+  var initial = currentUser.name.charAt(0).toUpperCase();
+  document.getElementById('profileInitial').textContent = initial;
+  document.getElementById('profileName').textContent    = currentUser.name;
+  document.getElementById('profileEmail').textContent   = currentUser.email;
+  document.getElementById('userChip').textContent       = currentUser.name.split(' ')[0];
+}
+
+// Pre-fill form with logged-in user's name (empCode & userId entered each time)
+function prefillForm(){
+  if(!currentUser) return;
+  document.getElementById('fullName').value = currentUser.name;
+  // empCode and userId are entered per entry - clear them
+  document.getElementById('empCode').value = '';
+  document.getElementById('userId').value  = '';
+}
+
+// ═══════════════════════════════════════════
+//  AUTH TAB SWITCHING
+// ═══════════════════════════════════════════
+function showLoginTab(){
+  document.getElementById('tabLogin').classList.add('on');
+  document.getElementById('tabRegister').classList.remove('on');
+  document.getElementById('formLogin').classList.add('on');
+  document.getElementById('formRegister').classList.remove('on');
+  document.getElementById('formForgot').classList.remove('on');
+}
+function showRegisterTab(){
+  document.getElementById('tabRegister').classList.add('on');
+  document.getElementById('tabLogin').classList.remove('on');
+  document.getElementById('formRegister').classList.add('on');
+  document.getElementById('formLogin').classList.remove('on');
+  document.getElementById('formForgot').classList.remove('on');
+}
+function showForgotForm(){
+  document.getElementById('formForgot').classList.add('on');
+  document.getElementById('formLogin').classList.remove('on');
+  document.getElementById('formRegister').classList.remove('on');
+}
+
+// ═══════════════════════════════════════════
+//  DATA STORAGE (per user)
+// ═══════════════════════════════════════════
+function userKey(key){ return key+'_'+(currentUser?currentUser.email:'guest'); }
+
+function loadUserData(){
+  try{ var r=localStorage.getItem(userKey(RK)); if(r) records=JSON.parse(r); else records=[]; } catch(e){ records=[]; }
+  try{ var l=localStorage.getItem(LK); if(l) locations=JSON.parse(l); } catch(e){}
+}
+function saveData(){
+  try{
+    localStorage.setItem(userKey(RK),JSON.stringify(records));
+    localStorage.setItem(LK,JSON.stringify(locations));
+  } catch(e){ toast('Storage full — export and clear records','err'); }
+}
+
+// ═══════════════════════════════════════════
+//  NAV
+// ═══════════════════════════════════════════
+function showScreen(name){
+  ['entry','records','settings'].forEach(function(n){
+    document.getElementById('sc-'+n).classList.remove('act');
+    document.getElementById('nb-'+n).classList.remove('act');
+  });
+  document.getElementById('sc-'+name).classList.add('act');
+  document.getElementById('nb-'+name).classList.add('act');
+  var sub={entry:'Add new record',records:'My records',settings:'Settings'};
+  document.getElementById('hsub').textContent=sub[name]||'';
+  if(name==='records'){ renderRecords(); updateStats(); }
+  if(name==='settings'){ renderLoginHist(); }
+}
+
+// ═══════════════════════════════════════════
+//  LOCATIONS
+// ═══════════════════════════════════════════
+function renderLocs(){
+  var sel=document.getElementById('locSel');
+  var cur=sel.value;
+  sel.innerHTML='<option value="">-- Select --</option>';
+  locations.forEach(function(l){
+    var o=document.createElement('option');
+    o.value=l; o.textContent=l;
+    sel.appendChild(o);
+  });
+  if(cur) sel.value=cur;
+
+  var chips=document.getElementById('locChips');
+  chips.innerHTML='';
+  locations.forEach(function(l){
+    var span=document.createElement('span');
+    span.style.cssText='background:#f1f5f9;border:1px solid var(--brd2);border-radius:20px;padding:.22rem .6rem;font-size:.75rem;color:var(--text2);display:inline-flex;align-items:center;gap:.3rem';
+    span.textContent=l;
+    var x=document.createElement('button');
+    x.textContent='x';
+    x.style.cssText='background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem;padding:0;margin-left:.2rem;line-height:1;';
+    x.onclick=function(){ removeLoc(l); };
+    span.appendChild(x);
+    chips.appendChild(span);
+  });
+}
+
+function addLoc(){
+  var v=document.getElementById('newLoc').value.trim();
+  if(!v){ toast('Enter a location name','warn'); return; }
+  if(locations.indexOf(v)>-1){ toast('Already exists','warn'); return; }
+  locations.push(v); saveData(); renderLocs();
+  document.getElementById('newLoc').value='';
+  toast('Location added','ok');
+}
+function removeLoc(name){
+  locations=locations.filter(function(l){ return l!==name; });
+  saveData(); renderLocs();
+}
+
+// ═══════════════════════════════════════════
+//  CALCS
+// ═══════════════════════════════════════════
+function calcShift(){
+  var d=diffHrs(document.getElementById('shiftStart').value,document.getElementById('shiftEnd').value);
+  document.getElementById('shiftDur').value=d?d+' hrs':'';
+}
+function calcOT(){
+  var d=diffHrs(document.getElementById('otStart').value,document.getElementById('otEnd').value);
+  document.getElementById('otHours').value=d?d+' hrs':'';
+}
+
+// ═══════════════════════════════════════════
+//  TOGGLES
+// ═══════════════════════════════════════════
+function toggleOT(){
+  otOn=!otOn;
+  document.getElementById('tglOT').className='tgl'+(otOn?' on':'');
+  document.getElementById('exOT').className='expd'+(otOn?' on':'');
+}
+function toggleOff(){
+  offOn=!offOn;
+  document.getElementById('tglOff').className='tgl'+(offOn?' on':'');
+}
+function setOTType(type){
+  otType=type;
+  document.getElementById('segNorm').className='sbtn'+(type==='Normal'?' on':'');
+  document.getElementById('segPH').className='sbtn'+(type==='PH'?' on':'');
+}
+
+// ═══════════════════════════════════════════
+//  SUBMIT
+// ═══════════════════════════════════════════
+function submitRecord(){
+  var eDT     = document.getElementById('entryDT').value;
+  var empCode = document.getElementById('empCode').value.trim();
+  var uid     = document.getElementById('userId').value.trim();
+  var fn      = document.getElementById('fullName').value.trim();
+  var loc     = document.getElementById('locSel').value;
+  var ss      = document.getElementById('shiftStart').value;
+
+  if(!eDT)     { toast('Entry date & time required','err'); return; }
+  if(!empCode) { toast('Employee code required','err'); return; }
+  if(!uid)     { toast('User ID / NT Login required','err'); return; }
+  if(!fn)      { toast('Full name required','err'); return; }
+  if(!loc)     { toast('Please select a location','err'); return; }
+  if(!ss)      { toast('Shift start required','err'); return; }
+
+  if(otOn){
+    var os=document.getElementById('otStart').value;
+    var oe=document.getElementById('otEnd').value;
+    if(!os){ toast('OT Start required','err'); return; }
+    if(!oe){ toast('OT End required','err'); return; }
+    if(new Date(oe)<=new Date(os)){ toast('OT End must be after OT Start','err'); return; }
+  }
+
+  var se=document.getElementById('shiftEnd').value;
+  var rec={
+    id:          Date.now(),
+    entryDT:     eDT,
+    empCode:     empCode,
+    userId:      uid,
+    fullName:    fn,
+    email:       currentUser ? currentUser.email : '',
+    location:    loc,
+    shiftStart:  ss,
+    shiftEnd:    se,
+    shiftDur:    diffHrs(ss,se),
+    hasOT:       otOn,
+    otType:      otOn?otType:'',
+    otStart:     otOn?document.getElementById('otStart').value:'',
+    otEnd:       otOn?document.getElementById('otEnd').value:'',
+    otHours:     otOn?diffHrs(document.getElementById('otStart').value,document.getElementById('otEnd').value):'',
+    workedOff:   offOn,
+    interactions:parseInt(document.getElementById('interactions').value)||0,
+    remarks:     document.getElementById('remarks').value.trim()
+  };
+
+  records.unshift(rec);
+  saveData();
+  clearForm();
+  toast('Record saved!','ok');
+  updateStats();
+}
+
+// ═══════════════════════════════════════════
+//  CLEAR FORM
+// ═══════════════════════════════════════════
+function clearForm(){
+  document.getElementById('entryDT').value=localNow();
+  ['shiftStart','shiftEnd','shiftDur','otStart','otEnd','otHours','interactions','remarks'].forEach(function(id){
+    document.getElementById(id).value='';
+  });
+  document.getElementById('locSel').value='';
+  if(otOn)  toggleOT();
+  if(offOn) toggleOff();
+  setOTType('Normal');
+  // Re-prefill user details
+  prefillForm();
+}
+
+// ═══════════════════════════════════════════
+//  RECORDS
+// ═══════════════════════════════════════════
+function renderRecords(){
+  var list=document.getElementById('recList');
+  if(!records.length){
+    list.innerHTML='<div class="empty"><div class="ei">&#128269;</div><p>No records yet.<br>Go to Entry to add records.</p></div>';
+    return;
+  }
+  var html='';
+  records.forEach(function(r,i){
+    var badges='';
+    if(r.hasOT){
+      if(r.otType==='PH') badges+='<span class="bdg bdg-o">PH OT '+(r.otHours||'')+'h</span> ';
+      else badges+='<span class="bdg bdg-a">OT '+(r.otHours||'')+'h</span> ';
+    }
+    if(r.workedOff) badges+='<span class="bdg bdg-b">Off Day</span> ';
+    if(!r.hasOT&&!r.workedOff) badges+='<span class="bdg bdg-g">Regular</span>';
+    var hc='ri-hd'+(r.otType==='PH'?' ph':r.workedOff?' od':'');
+    html+='<div class="ri">'+
+      '<div class="'+hc+'">'+
+        '<div class="ri-num">'+(records.length-i)+'</div>'+
+        '<div style="flex:1">'+
+          '<div class="ri-user">'+esc(r.empCode)+' | '+esc(r.userId)+' &mdash; '+esc(r.fullName)+'</div>'+
+          '<div class="ri-time">'+fmtDT(r.entryDT)+'</div>'+
+        '</div>'+
+        '<button class="ri-del" data-id="'+r.id+'">&#128465;</button>'+
+      '</div>'+
+      '<div class="ri-body">'+
+        '<div style="margin-bottom:.4rem">'+badges+'</div>'+
+        '<div class="ri-row"><span class="ri-lbl">Location</span>'+esc(r.location)+'</div>'+
+        '<div class="ri-row"><span class="ri-lbl">Shift</span>'+fmtDT(r.shiftStart)+(r.shiftEnd?' &rarr; '+fmtDT(r.shiftEnd):'')+( r.shiftDur?' ('+r.shiftDur+'h)':'')+'</div>'+
+        (r.hasOT?'<div class="ri-row"><span class="ri-lbl">OT</span>'+fmtDT(r.otStart)+' &rarr; '+fmtDT(r.otEnd)+'</div>':'')+
+        (r.interactions?'<div class="ri-row"><span class="ri-lbl">Interactions</span>'+r.interactions+'</div>':'')+
+        (r.remarks?'<div class="ri-row"><span class="ri-lbl">Remarks</span>'+esc(r.remarks)+'</div>':'')+
+      '</div>'+
+    '</div>';
+  });
+  list.innerHTML=html;
+}
+
+function updateStats(){
+  var otR=records.filter(function(r){return r.hasOT;});
+  var hrs=otR.reduce(function(a,r){return a+parseFloat(r.otHours||0);},0);
+  document.getElementById('stTotal').textContent=records.length;
+  document.getElementById('stOT').textContent=otR.length;
+  document.getElementById('stHrs').textContent=hrs.toFixed(1);
+}
+
+function deleteRecord(id){
+  if(!confirm('Delete this record?')) return;
+  records=records.filter(function(r){return r.id!==id;});
+  saveData(); renderRecords(); updateStats();
+  toast('Deleted','warn');
+}
+
+// ═══════════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════════
+function openExport(){
+  try{ var e=JSON.parse(localStorage.getItem('dot_eml')||'{}'); if(e.to) document.getElementById('toEml').value=e.to; } catch(ex){}
+  document.getElementById('expBg').classList.add('on');
+  document.getElementById('expSht').classList.add('on');
+}
+function closeExport(){
+  document.getElementById('expBg').classList.remove('on');
+  document.getElementById('expSht').classList.remove('on');
+}
+function setRange(r){
+  expRange=r;
+  ['rAll','rMonth','rWeek'].forEach(function(id){ document.getElementById(id).classList.remove('on'); });
+  document.getElementById({all:'rAll',month:'rMonth',week:'rWeek'}[r]).classList.add('on');
+}
+
+function getFilteredRecords(){
+  var now=new Date();
+  return records.filter(function(r){
+    if(expRange==='all') return true;
+    var d=new Date(r.entryDT);
+    if(expRange==='month') return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+    if(expRange==='week') return (now-d)/86400000<=7;
+    return true;
+  });
+}
+
+// Build Excel file name: OT_Duty & <FullName>.xlsx
+function buildFileName(){
+  var name = currentUser ? currentUser.name.replace(/[^a-zA-Z0-9 ]/g,'').trim() : 'Records';
+  return 'OT_Duty & '+name+'.xlsx';
+}
+
+function buildWorkbook(){
+  var data=getFilteredRecords();
+  if(!data.length) return null;
+
+  var rows=data.map(function(r,i){
+    return {
+      'No':              data.length-i,
+      'Employee Code':   r.empCode||'',
+      'Registered Email':r.email||'',
+      'User ID/NT Login':r.userId,
+      'Full Name':       r.fullName,
+      'Location':        r.location,
+      'Entry Date/Time': fmtDT(r.entryDT),
+      'Shift Start':     fmtDT(r.shiftStart),
+      'Shift End':       fmtDT(r.shiftEnd),
+      'Shift Hours':     r.shiftDur||'',
+      'Has OT':          r.hasOT?'Yes':'No',
+      'OT Type':         r.otType||'',
+      'OT Start':        fmtDT(r.otStart),
+      'OT End':          fmtDT(r.otEnd),
+      'OT Hours':        r.otHours||'',
+      'Worked Off Day':  r.workedOff?'Yes':'No',
+      'Interactions':    r.interactions||0,
+      'Remarks':         r.remarks||''
+    };
+  });
+
+  var ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:4},{wch:14},{wch:22},{wch:16},{wch:20},{wch:14},{wch:16},{wch:16},{wch:16},{wch:10},{wch:8},{wch:14},{wch:16},{wch:16},{wch:8},{wch:12},{wch:10},{wch:30}];
+
+  var from = currentUser ? currentUser.email : '--';
+  var loginDT = '';
+  var logoutDT = '';
+  if(currentUser && currentUser.loginDT){
+    var ld = new Date(currentUser.loginDT);
+    loginDT = pad(ld.getDate())+'/'+pad(ld.getMonth()+1)+'/'+ld.getFullYear()+' '+pad(ld.getHours())+':'+pad(ld.getMinutes());
+  }
+  var summary=[
+    {Metric:'User',               Value: currentUser ? currentUser.name : '--'},
+    {Metric:'Email',              Value: from},
+    {Metric:'Login Time',         Value: loginDT},
+    {Metric:'Export Time',        Value: new Date().toLocaleString()},
+    {Metric:'Total Records',      Value: data.length},
+    {Metric:'OT Records',         Value: data.filter(function(r){return r.hasOT;}).length},
+    {Metric:'PH OT',              Value: data.filter(function(r){return r.otType==='PH';}).length},
+    {Metric:'Off Day',            Value: data.filter(function(r){return r.workedOff;}).length},
+    {Metric:'Total OT Hours',     Value: data.reduce(function(a,r){return a+parseFloat(r.otHours||0);},0).toFixed(2)},
+    {Metric:'Total Interactions', Value: data.reduce(function(a,r){return a+(r.interactions||0);},0)}
+  ];
+
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Duty OT Records');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),'Summary');
+  return {wb:wb, fname:buildFileName(), data:data};
+}
+
+async function doShare(){
+  var result=buildWorkbook();
+  if(!result){ toast('No records in selected range','warn'); return; }
+  try{ localStorage.setItem('dot_eml',JSON.stringify({to:document.getElementById('toEml').value.trim()})); }catch(e){}
+
+  var wbOut=XLSX.write(result.wb,{bookType:'xlsx',type:'array'});
+  var blob=new Blob([wbOut],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  var file=new File([blob],result.fname,{type:blob.type,lastModified:Date.now()});
+
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({
+        title:'Duty & OT Records',
+        text:'Duty & OT records — '+result.data.length+' entries. Exported: '+new Date().toLocaleString(),
+        files:[file]
+      });
+      closeExport();
+      toast('Shared successfully!','ok');
+      return;
+    } catch(err){
+      if(err.name==='AbortError'){ toast('Share cancelled','warn'); return; }
+    }
+  }
+  // Fallback
+  XLSX.writeFile(result.wb,result.fname);
+  toast('Saved: '+result.fname+' — share from Downloads folder','ok');
+  closeExport();
+}
+
+function doExport(){
+  var to=document.getElementById('toEml').value.trim();
+  if(!to){ toast('Enter recipient email to use email option','err'); return; }
+
+  var result=buildWorkbook();
+  if(!result){ toast('No records in selected range','warn'); return; }
+  try{ localStorage.setItem('dot_eml',JSON.stringify({to:to})); }catch(e){}
+
+  XLSX.writeFile(result.wb,result.fname);
+  var subj=document.getElementById('emlSubj').value.trim()||'Duty & OT Records';
+  var from = currentUser ? currentUser.email : '';
+  setTimeout(function(){
+    var body='Please find the Duty & OT records attached.\n\nRecords: '+result.data.length+'\nExported: '+new Date().toLocaleString()+'\n\nFile: '+result.fname;
+    var mailto='mailto:'+encodeURIComponent(to)+(from?'?from='+encodeURIComponent(from)+'&':'?')+'subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
+    window.location.href=mailto;
+    closeExport();
+    toast('File saved. Attach '+result.fname+' to email','ok');
+  },600);
+}
+
+// ═══════════════════════════════════════════
+//  CLEAR ALL RECORDS
+// ═══════════════════════════════════════════
+function clearAll(){
+  if(!records.length){ toast('No records to clear','warn'); return; }
+  if(confirm('Delete ALL '+records.length+' records? Cannot be undone.')){
+    records=[]; saveData(); renderRecords(); updateStats();
+    toast('All records cleared','warn');
+  }
+}
+
+// ═══════════════════════════════════════════
+//  LOGIN HISTORY
+// ═══════════════════════════════════════════
+function fmtISO(iso){
+  if(!iso) return '--';
+  try{
+    var d=new Date(iso);
+    return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+  }catch(e){ return iso; }
+}
+
+function renderLoginHist(){
+  var el = document.getElementById('loginHist');
+  if(!el) return;
+  // Current session
+  var html = '';
+  if(currentUser && currentUser.loginDT){
+    html += '<div style="margin-bottom:.6rem;padding:.5rem .6rem;background:#f0fdf4;border-radius:8px;border:1px solid #86efac;">'
+          + '<span style="font-size:.68rem;font-weight:700;color:var(--green-dk);text-transform:uppercase;letter-spacing:.05em;">Current Session</span><br>'
+          + '<b>Login:</b> '+fmtISO(currentUser.loginDT)+'<br>'
+          + '<b>Status:</b> <span style="color:var(--green);font-weight:700;">Active</span>'
+          + '</div>';
+  }
+  // History
+  var hist = [];
+  try{ hist = JSON.parse(localStorage.getItem('dot_login_hist')||'[]'); }catch(e){}
+  if(hist.length){
+    html += '<div style="font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;">Previous Sessions</div>';
+    hist.slice(0,10).forEach(function(h){
+      html += '<div style="padding:.45rem .55rem;background:#f8fafc;border-radius:7px;margin-bottom:.35rem;border:1px solid var(--brd);">'
+            + '<span style="font-weight:600;color:var(--text2);">'+esc(h.name)+'</span>'
+            + '<br><span style="color:var(--muted);font-size:.7rem;">In: '+fmtISO(h.loginDT)+'&nbsp;&nbsp;Out: '+fmtISO(h.logoutDT)+'</span>'
+            + '</div>';
+    });
+  } else if(!currentUser || !currentUser.loginDT){
+    html = '<span style="color:var(--muted);font-size:.8rem;">No login history yet.</span>';
+  }
+  el.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════
+//  WIRE EVENTS
+// ═══════════════════════════════════════════
+function wireEvents(){
+  // Auth
+  document.getElementById('tabLogin').onclick    = showLoginTab;
+  document.getElementById('tabRegister').onclick = showRegisterTab;
+  document.getElementById('goRegister').onclick  = showRegisterTab;
+  document.getElementById('goLogin').onclick     = showLoginTab;
+  document.getElementById('forgotLink').onclick  = showForgotForm;
+  document.getElementById('backToLogin').onclick = showLoginTab;
+  document.getElementById('loginBtn').onclick    = doLogin;
+  document.getElementById('registerBtn').onclick = doRegister;
+  document.getElementById('forgotBtn').onclick   = doForgot;
+
+  // Enter key on login
+  document.getElementById('loginPwd').addEventListener('keydown',function(e){ if(e.key==='Enter') doLogin(); });
+  document.getElementById('loginEmail').addEventListener('keydown',function(e){ if(e.key==='Enter') document.getElementById('loginPwd').focus(); });
+
+  // Password eye toggles
+  document.getElementById('eyeLogin').onclick=function(){
+    var i=document.getElementById('loginPwd');
+    i.type=i.type==='password'?'text':'password';
+    this.textContent=i.type==='password'?'&#128065;':'&#128584;';
+  };
+  document.getElementById('eyeReg').onclick=function(){
+    var i=document.getElementById('regPwd');
+    i.type=i.type==='password'?'text':'password';
+    this.textContent=i.type==='password'?'&#128065;':'&#128584;';
+  };
+
+  // Nav
+  document.getElementById('nb-entry').onclick    = function(){ showScreen('entry'); };
+  document.getElementById('nb-records').onclick  = function(){ showScreen('records'); };
+  document.getElementById('nb-settings').onclick = function(){ showScreen('settings'); };
+
+  // Header buttons
+  document.getElementById('exportHBtn').onclick  = openExport;
+  document.getElementById('logoutBtn').onclick   = doLogout;
+
+  // Entry form
+  document.getElementById('nowBtn').onclick      = function(){ document.getElementById('entryDT').value=localNow(); };
+  document.getElementById('saveBtn').onclick     = submitRecord;
+  document.getElementById('clearBtn').onclick    = clearForm;
+
+  // Calcs
+  document.getElementById('shiftStart').addEventListener('change',calcShift);
+  document.getElementById('shiftEnd').addEventListener('change',calcShift);
+  document.getElementById('otStart').addEventListener('change',calcOT);
+  document.getElementById('otEnd').addEventListener('change',calcOT);
+
+  // Toggles
+  document.getElementById('trowOT').onclick  = toggleOT;
+  document.getElementById('trowOff').onclick = toggleOff;
+
+  // OT type segments
+  document.getElementById('segNorm').onclick = function(){ setOTType('Normal'); };
+  document.getElementById('segPH').onclick   = function(){ setOTType('PH'); };
+
+  // Settings
+  document.getElementById('shareBtn2').onclick   = openExport;
+  document.getElementById('exportBtn2').onclick  = openExport;
+  document.getElementById('addLocBtn').onclick   = addLoc;
+  document.getElementById('clearAllBtn').onclick = clearAll;
+  document.getElementById('logoutBtn2').onclick  = doLogout;
+
+  // Export sheet
+  document.getElementById('expBg').onclick       = closeExport;
+  document.getElementById('expCancelBtn').onclick= closeExport;
+  document.getElementById('shareBtn').onclick    = doShare;
+  document.getElementById('doExpBtn').onclick    = doExport;
+  document.getElementById('rAll').onclick        = function(){ setRange('all'); };
+  document.getElementById('rMonth').onclick      = function(){ setRange('month'); };
+  document.getElementById('rWeek').onclick       = function(){ setRange('week'); };
+
+  // Records list delete — event delegation
+  document.getElementById('recList').addEventListener('click',function(e){
+    var btn=e.target.closest('.ri-del');
+    if(btn) deleteRecord(Number(btn.dataset.id));
+  });
+
+  // Location enter key
+  document.getElementById('newLoc').addEventListener('keydown',function(e){
+    if(e.key==='Enter'){ e.preventDefault(); addLoc(); }
+  });
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+window.addEventListener('DOMContentLoaded',function(){
+  wireEvents();
+  // Check for existing session
+  var session = getSession();
+  if(session){
+    currentUser = session;
+    launchApp();
+  } else {
+    showAuthScreen();
+  }
+});
+</script>
+</body>
+</html>
